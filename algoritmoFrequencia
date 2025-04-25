@@ -1,0 +1,49 @@
+#define TRIG_PIN 23  // Pino de Trigger do sensor ultrassônico
+#define ECHO_PIN 22  // Pino de Echo do sensor ultrassônico
+
+long duration;
+float distance;
+int threshold = 30;  // Limite de distância em centímetros
+int detection_count = 0;  // Contador de detecções abaixo de 30 cm
+unsigned long previousMillis = 0;
+unsigned long interval = 1000;  // Intervalo de tempo para medir a frequência (1 segundo)
+int detection_frequency = 0;  // Frequência de detecções por segundo
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+}
+
+void loop() {
+  // Medir a distância usando o sensor ultrassônico
+  digitalWrite(TRIG_PIN, LOW);  // Garantir que o pino TRIG esteja em LOW
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);  // Enviar um pulso de 10 microsegundos
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  duration = pulseIn(ECHO_PIN, HIGH);  // Medir o tempo de resposta
+  distance = duration * 0.034 / 2;  // Calcular a distância em cm (velocidade do som)
+
+  // Verificar se a distância é menor que 30 cm
+  if (distance < threshold) {
+    detection_count++;
+  }
+
+  // Calcular a frequência de detecções a cada 1 segundo
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    detection_frequency = detection_count;  // Frequência de detecções no último segundo
+    detection_count = 0;  // Resetar o contador para o próximo intervalo
+    Serial.print("Frequência de detecções abaixo de 30 cm: ");
+    Serial.println(detection_frequency);  // Exibir a frequência
+  }
+
+  // Exibir a distância medida no Serial Monitor
+  Serial.print("Distância atual: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  delay(100);  // Atraso para melhorar a estabilidade da leitura
+}
